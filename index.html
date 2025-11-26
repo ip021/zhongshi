@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>医疗器械中试管理平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@4/lib/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/vant@4/lib/vant.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .page {
+            min-height: 100vh;
+            background: white;
+        }
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #0077b6;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+        }
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .nav-item.active {
+            color: #0077b6;
+        }
+        .card {
+            background: white;
+            margin: 12px;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #0077b6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 8px 0;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .task-card {
+            background: white;
+            margin: 8px 12px;
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid #0077b6;
+        }
+        .milestone-item {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .milestone-item:last-child {
+            border-bottom: none;
+        }
+        .milestone-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        .status-completed { background: #4caf50; }
+        .status-in-progress { background: #ff9800; }
+        .status-pending { background: #9e9e9e; }
+        .file-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        .param-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 24px;
+            z-index: 1000;
+            display: none;
+        }
+        .signature-canvas {
+            width: 100%;
+            height: 200px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+            margin: 16px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-item.active {
+            border-bottom: 2px solid #0077b6;
+            color: #0077b6;
+        }
+        .login-form {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .quick-entry-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .quick-entry-item {
+            background: white;
+            margin: 8px;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .quick-entry-item .icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .quick-entry-item .text {
+            font-size: 14px;
+        }
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 登录页面 -->
+        <div v-if="currentPage === 'login'" class="page">
+            <div class="login-container">
+                <h2 style="text-align: center; margin-bottom: 20px;">医疗器械中试管理平台</h2>
+                
+                <div class="tab-header">
+                    <div class="tab-item" :class="{ active: loginTab === 'client' }" @click="loginTab = 'client'">
+                        客户登录
+                    </div>
+                    <div class="tab-item" :class="{ active: loginTab === 'internal' }" @click="loginTab = 'internal'">
+                        平台登录
+                    </div>
+                </div>
+                
+                <div class="login-form">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" v-model="loginForm.username" placeholder="请输入用户名">
+                        <div style="font-size: 12px; color: #999; margin-top: 4px;">
+                            <span v-if="loginTab === 'client'">预填: customer001</span>
+                            <span v-else>预填: manager001</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" v-model="loginForm.password" placeholder="请输入密码">
+                        <div style="font-size: 12px; color: #999; margin-top: 4px;">
+                            预填: 123456
+                        </div>
+                    </div>
+                    
+                    <div v-if="loginTab === 'internal'" class="form-group">
+                        <label>选择角色</label>
+                        <select v-model="loginForm.role" class="param-input">
+                            <option value="">请选择角色</option>
+                            <option value="项目经理">项目经理</option>
+                            <option value="中试工程师">中试工程师</option>
+                            <option value="检测工程师">检测工程师</option>
+                            <option value="质量审核员">质量审核员</option>
+                            <option value="平台管理员">平台管理员</option>
+                        </select>
+                    </div>
+                    
+                    <button @click="login" class="btn">登录</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 首页 -->
+        <div v-if="currentPage === 'home'" class="page">
+            <div class="header">
+                <div>中试平台</div>
+                <div>{{ currentUser.role }}</div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <h2>👋 {{ currentUser.name }}，今天有{{ todoCount }}个新进展！</h2>
+                
+                <!-- 快捷入口 -->
+                <div class="quick-entry-grid">
+                    <div v-for="entry in quickEntries" :key="entry.id" 
+                         :class="['quick-entry-item', { disabled: !entry.enabled }]"
+                         @click="entry.enabled ? navigateTo(entry.page) : showNoPermission()">
+                        <div class="icon">{{ entry.icon }}</div>
+                        <div class="text">{{ entry.text }}</div>
+                    </div>
+                </div>
+                
+                <!-- 项目动态 -->
+                <div class="card">
+                    <h3>📅 最近项目动态</h3>
+                    <div v-for="update in projectUpdates" :key="update.id" class="task-card">
+                        <div><strong>{{ update.projectName }}</strong></div>
+                        <div style="color: #666; margin: 4px 0;">{{ update.status }}</div>
+                        <div style="font-size: 12px; color: #999;">{{ update.updateTime }}</div>
+                        <div style="margin-top: 8px;">
+                            <span style="background: #e3f2fd; padding: 4px 8px; border-radius: 12px; font-size: 12px;">{{ update.file }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 项目详情页 -->
+        <div v-if="currentPage === 'project-detail'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>项目详情</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div class="card">
+                    <h2>{{ selectedProject.name }}</h2>
+                    <div style="color: #0077b6; margin: 8px 0;">{{ selectedProject.status }}</div>
+                    <div style="color: #666; font-size: 14px;">
+                        启动: {{ selectedProject.startTime }} | 预计: {{ selectedProject.dueTime }}
+                    </div>
+                    <div style="margin-top: 8px; font-size: 14px;">
+                        负责人: {{ selectedProject.manager }} | 客户: {{ selectedProject.client }}
+                    </div>
+                </div>
+                
+                <!-- 里程碑 -->
+                <div class="card">
+                    <h3>🔧 中试流程进度</h3>
+                    <div v-for="milestone in selectedProject.milestones" :key="milestone.step" class="milestone-item">
+                        <div class="milestone-status" :class="getStatusClass(milestone.status)"></div>
+                        <div style="flex: 1;">
+                            <div><strong>{{ milestone.step }}</strong></div>
+                            <div style="font-size: 12px; color: #666;">{{ milestone.time }}</div>
+                        </div>
+                        <div v-if="milestone.status === 'in_progress'" style="color: #ff9800;">进行中</div>
+                        <div v-else-if="milestone.status === 'completed'" style="color: #4caf50;">已完成</div>
+                        <div v-else style="color: #999;">待开始</div>
+                    </div>
+                </div>
+                
+                <!-- 文件中心 -->
+                <div class="card">
+                    <h3>📦 关键交付物</h3>
+                    <div v-for="file in selectedProject.files" :key="file.name" class="file-item">
+                        <div class="file-icon">📄</div>
+                        <div style="flex: 1;">
+                            <div><strong>{{ file.name }}</strong></div>
+                            <div style="font-size: 12px; color: #666;">{{ file.type }} | {{ file.size }}</div>
+                        </div>
+                        <button @click="previewFile(file)" class="btn-secondary" style="padding: 4px 12px; font-size: 12px;">预览</button>
+                    </div>
+                </div>
+                
+                <!-- 沟通记录 -->
+                <div class="card">
+                    <h3>💬 沟通记录</h3>
+                    <div v-for="msg in selectedProject.messages" :key="msg.id" style="margin: 8px 0; padding: 8px; border-left: 3px solid #e0e0e0;">
+                        <div style="font-size: 12px; color: #666;">{{ msg.sender }} - {{ msg.time }}</div>
+                        <div>{{ msg.content }}</div>
+                    </div>
+                </div>
+                
+                <!-- 待办任务 -->
+                <div v-if="currentUser.role !== '客户'" class="card">
+                    <h3>❗ 你需要处理的任务</h3>
+                    <div v-for="task in selectedProject.tasks" :key="task.id" class="task-card">
+                        <div><strong>{{ task.title }}</strong></div>
+                        <div style="color: #666; margin: 4px 0;">{{ task.project }}</div>
+                        <div style="font-size: 12px; color: #ff9800;">{{ task.dueTime }}</div>
+                        <button @click="handleTask(task)" class="btn" style="margin-top: 8px;">{{ task.actionText }}</button>
+                    </div>
+                </div>
+                
+                <button v-if="currentUser.role === '客户'" @click="navigateTo('approval')" class="btn">查看并确认报告</button>
+            </div>
+        </div>
+
+        <!-- 待办任务中心 -->
+        <div v-if="currentPage === 'todo'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>待办任务</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div style="display: flex; overflow-x: auto; margin-bottom: 16px;">
+                    <div v-for="tab in todoTabs" :key="tab.key" 
+                         :class="['nav-item', { active: activeTodoTab === tab.key }]"
+                         @click="activeTodoTab = tab.key"
+                         style="white-space: nowrap; padding: 8px 16px;">
+                        {{ tab.label }}
+                    </div>
+                </div>
+                
+                <div v-for="task in filteredTasks" :key="task.id" class="task-card">
+                    <div><strong>{{ task.title }}</strong></div>
+                    <div style="color: #666; margin: 4px 0;">项目: {{ task.project }}</div>
+                    <div style="font-size: 12px; color: #ff9800;">截止: {{ task.dueTime }}</div>
+                    <div v-if="task.urgent" style="color: #f44336; font-size: 12px;">⚠️ 高优先级</div>
+                    <button @click="handleTask(task)" class="btn" style="margin-top: 8px;">{{ task.actionText }}</button>
+                </div>
+                
+                <!-- 本周统计 -->
+                <div class="card">
+                    <h3>📊 本周任务统计</h3>
+                    <div style="display: flex; justify-content: space-around;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; color: #4caf50;">✅</div>
+                            <div>已完成: 7项</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; color: #ff9800;">⏳</div>
+                            <div>进行中: 3项</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; color: #f44336;">❌</div>
+                            <div>逾期: 0项</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 电子签批流程页 -->
+        <div v-if="currentPage === 'approval'" class="page">
+            <div class="header">
+                <button @click="navigateTo('project-detail')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>电子签批</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div class="card">
+                    <h2>📄 {{ approvalDocument.title }}</h2>
+                    <div style="color: #666; margin: 8px 0;">
+                        项目: {{ approvalDocument.project }}<br>
+                        类型: {{ approvalDocument.type }}<br>
+                        生成时间: {{ approvalDocument.time }}
+                    </div>
+                </div>
+                
+                <!-- 文件预览 -->
+                <div class="card">
+                    <h3>预览文件</h3>
+                    <div style="background: #f0f0f0; height: 300px; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                        <div>📄 PDF预览区域</div>
+                    </div>
+                </div>
+                
+                <!-- 签批意见 -->
+                <div class="card">
+                    <h3>签批意见</h3>
+                    <select v-model="approvalType" class="param-input">
+                        <option value="approve">✅ 同意通过</option>
+                        <option value="modify">📝 需修改</option>
+                        <option value="reject">❌ 拒绝</option>
+                    </select>
+                    
+                    <textarea v-if="approvalType !== 'approve'" 
+                              v-model="approvalComment" 
+                              placeholder="请输入修改意见或拒绝理由" 
+                              class="param-input" 
+                              rows="3"></textarea>
+                </div>
+                
+                <!-- 电子签名 -->
+                <div class="card">
+                    <h3>电子签名</h3>
+                    <div style="margin: 16px 0;">
+                        <button @click="currentSignatureMethod = 'hand'" 
+                                :class="['btn-secondary', { active: currentSignatureMethod === 'hand' }]"
+                                style="margin-right: 8px;">手写签名</button>
+                        <button @click="currentSignatureMethod = 'bio'" 
+                                :class="['btn-secondary', { active: currentSignatureMethod === 'bio' }]"
+                                style="margin-right: 8px;">生物识别</button>
+                        <button @click="currentSignatureMethod = 'password'" 
+                                :class="['btn-secondary', { active: currentSignatureMethod === 'password' }]"
+                                style="margin-right: 8px;">密码确认</button>
+                    </div>
+                    
+                    <canvas v-if="currentSignatureMethod === 'hand'" 
+                            ref="signatureCanvas" 
+                            class="signature-canvas" 
+                            @touchstart="startDrawing" 
+                            @touchmove="draw" 
+                            @touchend="stopDrawing"></canvas>
+                    
+                    <div v-if="currentSignatureMethod === 'bio'" style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">👆</div>
+                        <div>使用指纹/面容识别完成签名</div>
+                        <button @click="simulateBioAuth" class="btn" style="margin-top: 16px;">开始验证</button>
+                    </div>
+                </div>
+                
+                <!-- 合规确认 -->
+                <div class="card">
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" v-model="complianceConfirmed" style="margin-right: 8px;">
+                        我确认已完整审阅文件内容，理解签批的法律责任
+                    </label>
+                </div>
+                
+                <button @click="submitApproval" :disabled="!complianceConfirmed" class="btn">
+                    提交签批
+                </button>
+            </div>
+        </div>
+
+        <!-- 工艺参数录入页 -->
+        <div v-if="currentPage === 'process-entry'" class="page">
+            <div class="header">
+                <button @click="navigateTo('todo')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>参数录入</div>
+                <div>{{ currentLocation }}</div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div style="display: flex; overflow-x: auto; margin-bottom: 16px;">
+                    <div v-for="(step, index) in processSteps" :key="step.name" 
+                         :class="['nav-item', { active: currentStepIndex === index }]"
+                         @click="currentStepIndex = index"
+                         style="white-space: nowrap; padding: 8px 16px; border: 1px solid #ddd; border-radius: 20px; margin-right: 8px;">
+                        {{ step.name }}
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>{{ processSteps[currentStepIndex].name }} 参数</h3>
+                    
+                    <div v-for="param in processSteps[currentStepIndex].params" :key="param.name">
+                        <label>{{ param.name }}</label>
+                        <div style="display: flex; align-items: center;">
+                            <input type="number" 
+                                   v-model="param.value" 
+                                   :placeholder="param.placeholder" 
+                                   class="param-input"
+                                   @input="validateParam(param)">
+                            <span style="margin-left: 8px;">{{ param.unit }}</span>
+                        </div>
+                        <div v-if="param.warning" style="color: #f44336; font-size: 12px; margin-top: 4px;">
+                            ⚠️ {{ param.warning }}
+                        </div>
+                    </div>
+                    
+                    <textarea v-model="paramRemark" placeholder="备注（如设备异常、参数调整原因等）" 
+                              class="param-input" rows="3"></textarea>
+                </div>
+                
+                <button @click="submitProcessData" class="btn">提交数据</button>
+                <button @click="saveDraft" class="btn btn-secondary">暂存草稿</button>
+            </div>
+        </div>
+
+        <!-- 报告生成页 -->
+        <div v-if="currentPage === 'report-generation'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>报告生成</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div class="card">
+                    <h3>数据源配置</h3>
+                    <div v-for="source in reportDataSources" :key="source.name" style="display: flex; align-items: center; margin: 8px 0;">
+                        <input type="checkbox" v-model="source.enabled" :id="source.name">
+                        <label :for="source.name" style="margin-left: 8px; flex: 1;">
+                            {{ source.name }}
+                            <span :style="{ color: source.status === 'complete' ? '#4caf50' : source.status === 'partial' ? '#ff9800' : '#f44336' }">
+                                ({{ source.statusText }})
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>选择模板</h3>
+                    <select v-model="selectedTemplate" class="param-input">
+                        <option value="nmpa">📜 NMPA注册用中试报告</option>
+                        <option value="fda">📜 FDA 510(k) Pre-Market Notification</option>
+                        <option value="internal">📜 企业内部评审模板</option>
+                    </select>
+                </div>
+                
+                <div class="card">
+                    <h3>报告预览</h3>
+                    <div style="background: #f0f0f0; height: 200px; padding: 16px; border-radius: 8px; overflow-y: auto;">
+                        <div><strong>{{ selectedProject.name }} 中试评价报告</strong></div>
+                        <div style="margin: 8px 0;">报告编号: {{ selectedProject.id }}</div>
+                        <div style="margin: 8px 0;">生成时间: {{ new Date().toLocaleString() }}</div>
+                        <div style="font-size: 12px; color: #666;">
+                            此处为报告内容预览...
+                        </div>
+                    </div>
+                </div>
+                
+                <button @click="generateReport" class="btn">生成报告</button>
+                <button @click="showVersionHistory = true" class="btn btn-secondary">查看版本历史</button>
+            </div>
+        </div>
+
+        <!-- 系统设置页 -->
+        <div v-if="currentPage === 'settings'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>系统设置</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div class="card">
+                    <h3>组织架构</h3>
+                    <div v-for="dept in departments" :key="dept.name" style="margin: 8px 0;">
+                        <div><strong>{{ dept.name }}</strong></div>
+                        <div style="font-size: 12px; color: #666;">
+                            {{ dept.users.length }} 人
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>用户管理</h3>
+                    <div v-for="user in users" :key="user.id" style="display: flex; align-items: center; margin: 8px 0; padding: 8px; border: 1px solid #eee; border-radius: 4px;">
+                        <div style="flex: 1;">
+                            <div><strong>{{ user.name }}</strong></div>
+                            <div style="font-size: 12px; color: #666;">{{ user.role }} | {{ user.department }}</div>
+                        </div>
+                        <button @click="editUser(user)" class="btn-secondary" style="padding: 4px 12px; font-size: 12px;">编辑</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>流程模板管理</h3>
+                    <div v-for="template in processTemplates" :key="template.id" style="margin: 8px 0; padding: 8px; border: 1px solid #eee; border-radius: 4px;">
+                        <div><strong>{{ template.name }}</strong></div>
+                        <div style="font-size: 12px; color: #666;">
+                            类型: {{ template.type }} | 版本: {{ template.version }} | 状态: {{ template.status }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>安全设置</h3>
+                    <div style="margin: 8px 0;">
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" v-model="securitySettings.mfaEnabled">
+                            <span style="margin-left: 8px;">启用多因素认证</span>
+                        </label>
+                    </div>
+                    <div style="margin: 8px 0;">
+                        <label>会话超时</label>
+                        <select v-model="securitySettings.sessionTimeout" class="param-input">
+                            <option value="30">30分钟</option>
+                            <option value="60">60分钟</option>
+                            <option value="120">2小时</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button @click="logout" class="btn" style="background: #f44336;">退出登录</button>
+            </div>
+        </div>
+
+        <!-- 新建中试申请页 -->
+        <div v-if="currentPage === 'apply'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>新建申请</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div class="card">
+                    <h3>项目基本信息</h3>
+                    <div class="form-group">
+                        <label>项目名称</label>
+                        <input type="text" v-model="newProject.name" placeholder="请输入项目名称" class="param-input">
+                    </div>
+                    <div class="form-group">
+                        <label>项目类型</label>
+                        <select v-model="newProject.type" class="param-input">
+                            <option value="">请选择类型</option>
+                            <option value="有源器械">有源器械</option>
+                            <option value="无源器械">无源器械</option>
+                            <option value="体外诊断">体外诊断</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>预计周期</label>
+                        <input type="text" v-model="newProject.duration" placeholder="预计中试周期（天）" class="param-input">
+                    </div>
+                    <div class="form-group">
+                        <label>项目描述</label>
+                        <textarea v-model="newProject.description" placeholder="请输入项目描述" class="param-input" rows="4"></textarea>
+                    </div>
+                </div>
+                
+                <button @click="submitNewProject" class="btn">提交申请</button>
+            </div>
+        </div>
+
+        <!-- 沟通中心页 -->
+        <div v-if="currentPage === 'messages'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>沟通中心</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div class="card">
+                    <h3>项目群聊</h3>
+                    <div v-for="msg in chatMessages" :key="msg.id" style="margin: 8px 0; padding: 8px; border-left: 3px solid #e0e0e0;">
+                        <div style="font-size: 12px; color: #666;">{{ msg.sender }} - {{ msg.time }}</div>
+                        <div>{{ msg.content }}</div>
+                    </div>
+                    
+                    <div style="display: flex; margin-top: 16px;">
+                        <input type="text" v-model="newMessage" placeholder="输入消息..." class="param-input" style="flex: 1; margin-right: 8px;">
+                        <button @click="sendMessage" class="btn" style="width: auto; padding: 12px 16px;">发送</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>通知中心</h3>
+                    <div v-for="notification in notifications" :key="notification.id" style="margin: 8px 0; padding: 8px; border-left: 3px solid #ff9800;">
+                        <div style="font-size: 12px; color: #666;">{{ notification.time }}</div>
+                        <div>{{ notification.content }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 文件中心页 -->
+        <div v-if="currentPage === 'files'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>文件中心</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div style="display: flex; overflow-x: auto; margin-bottom: 16px;">
+                    <div v-for="tab in fileTabs" :key="tab.key" 
+                         :class="['nav-item', { active: activeFileTab === tab.key }]"
+                         @click="activeFileTab = tab.key"
+                         style="white-space: nowrap; padding: 8px 16px;">
+                        {{ tab.label }}
+                    </div>
+                </div>
+                
+                <div v-for="file in filteredFiles" :key="file.name" class="file-item">
+                    <div class="file-icon">📄</div>
+                    <div style="flex: 1;">
+                        <div><strong>{{ file.name }}</strong></div>
+                        <div style="font-size: 12px; color: #666;">{{ file.type }} | {{ file.size }} | {{ file.time }}</div>
+                    </div>
+                    <button @click="previewFile(file)" class="btn-secondary" style="padding: 4px 12px; font-size: 12px;">预览</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 签批成功页 -->
+        <div v-if="currentPage === 'approval-success'" class="page" style="display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: center; padding: 32px;">
+                <div style="font-size: 64px; color: #4caf50; margin-bottom: 16px;">✅</div>
+                <h2>签批成功！</h2>
+                <p style="color: #666; margin: 16px 0;">您的签名已记录，相关方将收到通知</p>
+                <button @click="navigateTo('project-detail')" class="btn">返回项目详情</button>
+            </div>
+        </div>
+
+        <!-- 底部导航 -->
+        <div v-if="['home', 'projects', 'messages', 'profile'].includes(currentPage)" class="footer-nav">
+            <div class="nav-item" :class="{ active: currentPage === 'home' }" @click="navigateTo('home')">
+                🏠 首页
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'projects' }" @click="navigateTo('projects')">
+                📋 项目
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'messages' }" @click="navigateTo('messages')">
+                💬 沟通
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'profile' }" @click="navigateTo('settings')">
+                📁 我的
+            </div>
+        </div>
+
+        <!-- Toast 提示 -->
+        <div class="toast" :style="{ display: showToast ? 'block' : 'none' }">
+            {{ toastMessage }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // 当前页面
+                const currentPage = ref('login');
+                
+                // 登录相关
+                const loginTab = ref('client');
+                const loginForm = ref({
+                    username: 'manager001', // 预填默认值
+                    password: '123456',     // 预填默认值
+                    role: '项目经理'        // 预填默认值
+                });
+                
+                // 当前用户信息
+                const currentUser = ref({
+                    name: '张经理',
+                    role: '项目经理',
+                    id: 'PM001'
+                });
+                
+                // 不同角色的快捷入口配置
+                const roleQuickEntries = {
+                    '客户': [
+                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                        { id: 3, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                        { id: 4, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                        { id: 5, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                        { id: 6, icon: '🔧', text: '参数录入', page: 'process-entry', enabled: false },
+                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+                    ],
+                    '项目经理': [
+                        { id: 1, icon: '📄', text: '新建申请', page: 'apply', enabled: true },
+                        { id: 2, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                        { id: 3, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: true },
+                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+                    ],
+                    '中试工程师': [
+                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
+                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+                    ],
+                    '检测工程师': [
+                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
+                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+                    ],
+                    '质量审核员': [
+                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: false },
+                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+                    ],
+                    '平台管理员': [
+                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
+                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: true },
+                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+                    ]
+                };
+                
+                // 根据当前角色获取对应的快捷入口
+                const quickEntries = computed(() => {
+                    return roleQuickEntries[currentUser.value.role] || roleQuickEntries['项目经理'];
+                });
+                
+                // 演示数据
+                const todoCount = ref(3);
+                const projectUpdates = ref([
+                    {
+                        id: 'update1',
+                        projectName: '心脏起搏器中试',
+                        status: '工艺验证完成',
+                        file: '验证报告V1.2',
+                        updateTime: '2025-11-24 15:30'
+                    },
+                    {
+                        id: 'update2',
+                        projectName: '血糖仪外壳注塑',
+                        status: '试制执行中',
+                        file: '批记录V3.1',
+                        updateTime: '2025-11-24 14:20'
+                    },
+                    {
+                        id: 'update3',
+                        projectName: '一次性导管中试',
+                        status: '需求确认完成',
+                        file: '技术协议V1.0',
+                        updateTime: '2025-11-23 16:45'
+                    }
+                ]);
+                
+                // 选中的项目
+                const selectedProject = ref({
+                    id: '2025-MD08',
+                    name: '心脏起搏器中试',
+                    status: '报告编制中',
+                    startTime: '2025-10-15',
+                    dueTime: '2025-11-30',
+                    manager: '张工',
+                    client: '李经理',
+                    milestones: [
+                        { step: '需求确认', status: 'completed', time: '2025-10-16' },
+                        { step: '工艺设计', status: 'completed', time: '2025-10-20' },
+                        { step: '试制执行', status: 'completed', time: '2025-11-10' },
+                        { step: '检测验证', status: 'completed', time: '2025-11-20' },
+                        { step: '报告编制', status: 'in_progress', time: '进行中', progress: 70 },
+                        { step: '客户确认', status: 'pending', time: '待触发' },
+                        { step: '项目结案', status: 'pending', time: '待触发' }
+                    ],
+                    files: [
+                        { name: '中试工艺方案V1.2.pdf', type: '方案', size: '2.3MB', time: '2025-10-20' },
+                        { name: '电子批记录-Batch#3.xlsx', type: '记录', size: '1.1MB', time: '2025-11-15' },
+                        { name: '检测报告MD08-V3.pdf', type: '报告', size: '4.2MB', time: '2025-11-22' },
+                        { name: '中试评价报告V1.0.pdf', type: '报告', size: '5.6MB', time: '2025-11-24' }
+                    ],
+                    messages: [
+                        { id: 'msg1', sender: '王工', content: '今天完成了加速老化试验，数据正常', time: '14:22' },
+                        { id: 'msg2', sender: '系统', content: '《验证报告》已提交至审核队列', time: '10:15' },
+                        { id: 'msg3', sender: '张经理', content: '同意进入报告编制阶段', time: '16:40' }
+                    ],
+                    tasks: [
+                        {
+                            id: 'task1',
+                            title: '审核检测原始数据',
+                            project: '2025-MD08',
+                            dueTime: '2025-11-26 20:00',
+                            actionText: '前往审核'
+                        }
+                    ]
+                });
+                
+                // 待办任务
+                const todoTasks = ref([
+                    {
+                        id: 'T20251124001',
+                        type: 'approval',
+                        title: '需客户确认《中试评价报告》',
+                        project: '2025-MD08',
+                        dueTime: '2025-11-26 18:00',
+                        urgent: true,
+                        attachments: ['report_v1.pdf'],
+                        actionText: '查看并确认',
+                        action: 'approval'
+                    },
+                    {
+                        id: 'T20251124002',
+                        type: 'process',
+                        title: '第4批试制参数录入',
+                        project: '2025-MD12',
+                        dueTime: '2025-11-25 14:00',
+                        urgent: false,
+                        attachments: [],
+                        actionText: '开始录入',
+                        action: 'process-entry'
+                    },
+                    {
+                        id: 'T20251124003',
+                        type: 'review',
+                        title: '检测原始数据审核',
+                        project: '2025-MD08',
+                        dueTime: '2025-11-25 20:00',
+                        urgent: true,
+                        attachments: ['data.xlsx'],
+                        actionText: '前往审核',
+                        action: 'process-entry'
+                    }
+                ]);
+                
+                const activeTodoTab = ref('all');
+                const todoTabs = [
+                    { key: 'urgent', label: '🔴 高优先级' },
+                    { key: 'approval', label: '⏳ 待审批' },
+                    { key: 'process', label: '📋 待录入' },
+                    { key: 'all', label: '✅ 全部' }
+                ];
+                
+                const filteredTasks = computed(() => {
+                    if (activeTodoTab.value === 'all') return todoTasks.value;
+                    if (activeTodoTab.value === 'urgent') return todoTasks.value.filter(t => t.urgent);
+                    return todoTasks.value.filter(t => t.type === activeTodoTab.value);
+                });
+                
+                // 电子签批相关
+                const approvalDocument = ref({
+                    title: '中试评价报告V1.0',
+                    project: '2025-MD08',
+                    type: '最终交付报告',
+                    time: '2025-11-24 16:30'
+                });
+                
+                const approvalType = ref('approve');
+                const approvalComment = ref('');
+                const currentSignatureMethod = ref('hand');
+                const complianceConfirmed = ref(false);
+                const signatureCanvas = ref(null);
+                const isDrawing = ref(false);
+                
+                // 工艺参数录入
+                const currentLocation = ref('组装车间-工位03');
+                const processSteps = ref([
+                    {
+                        name: '预处理',
+                        params: [
+                            { name: '温度', value: '', placeholder: '输入温度', unit: '°C', min: 20, max: 25, warning: '' },
+                            { name: '湿度', value: '', placeholder: '输入湿度', unit: '%', min: 45, max: 65, warning: '' }
+                        ]
+                    },
+                    {
+                        name: '组装',
+                        params: [
+                            { name: '压力', value: '', placeholder: '输入压力', unit: 'kPa', min: 100, max: 120, warning: '' },
+                            { name: '持续时间', value: '', placeholder: '输入时间', unit: 'min', min: 10, max: 20, warning: '' }
+                        ]
+                    },
+                    {
+                        name: '老化测试',
+                        params: [
+                            { name: '温度', value: '', placeholder: '输入温度', unit: '°C', min: 40, max: 50, warning: '' },
+                            { name: '时间', value: '', placeholder: '输入时间', unit: 'h', min: 24, max: 168, warning: '' }
+                        ]
+                    }
+                ]);
+                const currentStepIndex = ref(0);
+                const paramRemark = ref('');
+                
+                // 报告生成
+                const reportDataSources = ref([
+                    { name: '工艺数据', enabled: true, status: 'complete', statusText: '完整' },
+                    { name: '检测结果', enabled: true, status: 'partial', statusText: '部分缺失' },
+                    { name: '电子签批', enabled: false, status: 'pending', statusText: '待完成' },
+                    { name: '设备日志', enabled: true, status: 'complete', statusText: '完整' }
+                ]);
+                const selectedTemplate = ref('nmpa');
+                const showVersionHistory = ref(false);
+                
+                // 系统设置
+                const departments = ref([
+                    { name: '平台管理部', users: ['张经理', '李主管'] },
+                    { name: '中试工程部', users: ['王工', '赵工', '孙工'] },
+                    { name: '质量审核组', users: ['刘审核', '陈审核'] }
+                ]);
+                const users = ref([
+                    { id: 'PM001', name: '张经理', role: '项目经理', department: '平台管理部' },
+                    { id: 'EN001', name: '王工', role: '中试工程师', department: '中试工程部' },
+                    { id: 'QA001', name: '刘审核', role: '质量审核员', department: '质量审核组' }
+                ]);
+                const processTemplates = ref([
+                    { id: 'temp1', name: '心脏起搏器中试流程', type: '有源器械', version: 'V2.1', status: '启用' },
+                    { id: 'temp2', name: '血糖仪注塑中试流程', type: '无源器械', version: 'V1.3', status: '启用' },
+                    { id: 'temp3', name: '一次性导管中试流程', type: '三类器械', version: 'V3.0', status: '草稿' }
+                ]);
+                const securitySettings = ref({
+                    mfaEnabled: true,
+                    sessionTimeout: '30'
+                });
+                
+                // 新建项目
+                const newProject = ref({
+                    name: '',
+                    type: '',
+                    duration: '',
+                    description: ''
+                });
+                
+                // 沟通中心
+                const chatMessages = ref([
+                    { id: 1, sender: '张经理', content: '大家好，今天开始心脏起搏器中试项目', time: '10:30' },
+                    { id: 2, sender: '王工', content: '收到，准备开始预处理步骤', time: '10:32' },
+                    { id: 3, sender: '系统', content: '《工艺方案》已上传至文件中心', time: '10:35' }
+                ]);
+                const newMessage = ref('');
+                const notifications = ref([
+                    { id: 1, content: '《验证报告》已生成，请审核', time: '14:20' },
+                    { id: 2, content: '新任务：参数录入 - 第4批', time: '11:15' }
+                ]);
+                
+                // 文件中心
+                const allFiles = ref([
+                    { name: '中试工艺方案V1.2.pdf', type: '方案', size: '2.3MB', time: '2025-10-20', category: '方案' },
+                    { name: '电子批记录-Batch#3.xlsx', type: '记录', size: '1.1MB', time: '2025-11-15', category: '记录' },
+                    { name: '检测报告MD08-V3.pdf', type: '报告', size: '4.2MB', time: '2025-11-22', category: '报告' },
+                    { name: '中试评价报告V1.0.pdf', type: '报告', size: '5.6MB', time: '2025-11-24', category: '报告' },
+                    { name: 'SOP-组装操作规程V1.0.pdf', type: 'SOP', size: '1.8MB', time: '2025-10-18', category: 'SOP' }
+                ]);
+                const activeFileTab = ref('all');
+                const fileTabs = [
+                    { key: 'all', label: '全部' },
+                    { key: '方案', label: '方案' },
+                    { key: '记录', label: '记录' },
+                    { key: '报告', label: '报告' },
+                    { key: 'SOP', label: 'SOP' }
+                ];
+                
+                const filteredFiles = computed(() => {
+                    if (activeFileTab.value === 'all') return allFiles.value;
+                    return allFiles.value.filter(file => file.category === activeFileTab.value);
+                });
+                
+                // Toast 提示
+                const showToast = ref(false);
+                const toastMessage = ref('');
+                
+                // 方法
+                const login = () => {
+                    if (!loginForm.value.username || !loginForm.value.password) {
+                        showToast.value = true;
+                        toastMessage.value = '请输入用户名和密码';
+                        setTimeout(() => { showToast.value = false; }, 2000);
+                        return;
+                    }
+                    
+                    if (loginTab.value === 'internal' && !loginForm.value.role) {
+                        showToast.value = true;
+                        toastMessage.value = '请选择角色';
+                        setTimeout(() => { showToast.value = false; }, 2000);
+                        return;
+                    }
+                    
+                    // 模拟登录成功
+                    currentUser.value.name = loginForm.value.username;
+                    currentUser.value.role = loginTab.value === 'client' ? '客户' : loginForm.value.role;
+                    
+                    showToast.value = true;
+                    toastMessage.value = '登录成功！';
+                    setTimeout(() => { 
+                        showToast.value = false;
+                        currentPage.value = 'home';
+                    }, 2000);
+                };
+                
+                const navigateTo = (page) => {
+                    // 检查角色权限
+                    if (page === 'process-entry' && ['客户', '质量审核员'].includes(currentUser.value.role)) {
+                        showNoPermission();
+                        return;
+                    }
+                    if (page === 'report-generation' && ['客户', '中试工程师', '检测工程师', '质量审核员'].includes(currentUser.value.role)) {
+                        showNoPermission();
+                        return;
+                    }
+                    
+                    currentPage.value = page;
+                    showToast.value = false;
+                };
+                
+                const showNoPermission = () => {
+                    showToast.value = true;
+                    toastMessage.value = '您没有权限访问此功能';
+                    setTimeout(() => { showToast.value = false; }, 2000);
+                };
+                
+                const getStatusClass = (status) => {
+                    return `status-${status}`;
+                };
+                
+                const handleTask = (task) => {
+                    if (task.action) {
+                        navigateTo(task.action);
+                    } else {
+                        showToast.value = true;
+                        toastMessage.value = '功能开发中...';
+                        setTimeout(() => { showToast.value = false; }, 2000);
+                    }
+                };
+                
+                const previewFile = (file) => {
+                    showToast.value = true;
+                    toastMessage.value = `预览文件: ${file.name}`;
+                    setTimeout(() => { showToast.value = false; }, 2000);
+                };
+                
+                const startDrawing = (e) => {
+                    isDrawing.value = true;
+                    const canvas = signatureCanvas.value;
+                    const ctx = canvas.getContext('2d');
+                    ctx.beginPath();
+                    const rect = canvas.getBoundingClientRect();
+                    ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+                };
+                
+                const draw = (e) => {
+                    if (!isDrawing.value) return;
+                    const canvas = signatureCanvas.value;
+                    const ctx = canvas.getContext('2d');
+                    const rect = canvas.getBoundingClientRect();
+                    ctx.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+                    ctx.stroke();
+                };
+                
+                const stopDrawing = () => {
+                    isDrawing.value = false;
+                };
+                
+                const simulateBioAuth = () => {
+                    showToast.value = true;
+                    toastMessage.value = '生物识别验证成功！';
+                    setTimeout(() => { 
+                        showToast.value = false;
+                        currentSignatureMethod.value = 'bio';
+                    }, 2000);
+                };
+                
+                const submitApproval = () => {
+                    if (!complianceConfirmed.value) {
+                        showToast.value = true;
+                        toastMessage.value = '请确认法律责任条款';
+                        setTimeout(() => { showToast.value = false; }, 2000);
+                        return;
+                    }
+                    
+                    showToast.value = true;
+                    toastMessage.value = '签批提交成功！';
+                    setTimeout(() => { 
+                        showToast.value = false;
+                        navigateTo('approval-success');
+                    }, 2000);
+                };
+                
+                const validateParam = (param) => {
+                    const value = parseFloat(param.value);
+                    if (value < param.min || value > param.max) {
+                        param.warning = `超出范围 (${param.min}-${param.max}${param.unit})`;
+                    } else {
+                        param.warning = '';
+                    }
+                };
+                
+                const submitProcessData = () => {
+                    // 验证所有参数
+                    let hasError = false;
+                    processSteps.value[currentStepIndex.value].params.forEach(param => {
+                        if (param.warning) hasError = true;
+                    });
+                    
+                    if (hasError) {
+                        showToast.value = true;
+                        toastMessage.value = '存在参数异常，请检查后提交';
+                        setTimeout(() => { showToast.value = false; }, 2000);
+                        return;
+                    }
+                    
+                    showToast.value = true;
+                    toastMessage.value = '参数提交成功！';
+                    setTimeout(() => { 
+                        showToast.value = false;
+                        navigateTo('home');
+                    }, 2000);
+                };
+                
+                const saveDraft = () => {
+                    showToast.value = true;
+                    toastMessage.value = '草稿已保存到本地';
+                    setTimeout(() => { showToast.value = false; }, 2000);
+                };
+                
+                const generateReport = () => {
+                    showToast.value = true;
+                    toastMessage.value = '报告生成中...';
+                    setTimeout(() => { 
+                        showToast.value = false;
+                        navigateTo('home');
+                    }, 2000);
+                };
+                
+                const editUser = (user) => {
+                    showToast.value = true;
+                    toastMessage.value = `编辑用户: ${user.name}`;
+                    setTimeout(() => { showToast.value = false; }, 2000);
+                };
+                
+                const logout = () => {
+                    showToast.value = true;
+                    toastMessage.value = '退出登录成功';
+                    setTimeout(() => { 
+                        showToast.value = false;
+                        currentPage.value = 'login';
+                        loginForm.value = { username: 'manager001', password: '123456', role: '项目经理' };
+                    }, 2000);
+                };
+                
+                const submitNewProject = () => {
+                    if (!newProject.value.name || !newProject.value.type) {
+                        showToast.value = true;
+                        toastMessage.value = '请填写项目名称和类型';
+                        setTimeout(() => { showToast.value = false; }, 2000);
+                        return;
+                    }
+                    
+                    showToast.value = true;
+                    toastMessage.value = '申请提交成功！';
+                    setTimeout(() => { 
+                        showToast.value = false;
+                        navigateTo('home');
+                    }, 2000);
+                };
+                
+                const sendMessage = () => {
+                    if (!newMessage.value.trim()) {
+                        showToast.value = true;
+                        toastMessage.value = '请输入消息内容';
+                        setTimeout(() => { showToast.value = false; }, 2000);
+                        return;
+                    }
+                    
+                    chatMessages.value.push({
+                        id: chatMessages.value.length + 1,
+                        sender: currentUser.value.name,
+                        content: newMessage.value,
+                        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+                    });
+                    newMessage.value = '';
+                };
+                
+                // 初始化画布
+                onMounted(() => {
+                    if (signatureCanvas.value) {
+                        const canvas = signatureCanvas.value;
+                        const ctx = canvas.getContext('2d');
+                        ctx.lineWidth = 2;
+                        ctx.lineCap = 'round';
+                        ctx.strokeStyle = '#000';
+                    }
+                });
+                
+                return {
+                    currentPage,
+                    loginTab,
+                    loginForm,
+                    currentUser,
+                    quickEntries,
+                    todoCount,
+                    projectUpdates,
+                    selectedProject,
+                    todoTasks,
+                    activeTodoTab,
+                    todoTabs,
+                    filteredTasks,
+                    approvalDocument,
+                    approvalType,
+                    approvalComment,
+                    currentSignatureMethod,
+                    complianceConfirmed,
+                    signatureCanvas,
+                    processSteps,
+                    currentStepIndex,
+                    paramRemark,
+                    currentLocation,
+                    reportDataSources,
+                    selectedTemplate,
+                    showVersionHistory,
+                    departments,
+                    users,
+                    processTemplates,
+                    securitySettings,
+                    newProject,
+                    chatMessages,
+                    newMessage,
+                    notifications,
+                    allFiles,
+                    activeFileTab,
+                    fileTabs,
+                    filteredFiles,
+                    showToast,
+                    toastMessage,
+                    login,
+                    navigateTo,
+                    showNoPermission,
+                    getStatusClass,
+                    handleTask,
+                    previewFile,
+                    startDrawing,
+                    draw,
+                    stopDrawing,
+                    simulateBioAuth,
+                    submitApproval,
+                    validateParam,
+                    submitProcessData,
+                    saveDraft,
+                    generateReport,
+                    editUser,
+                    logout,
+                    submitNewProject,
+                    sendMessage
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+
+
+
