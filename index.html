@@ -282,10 +282,10 @@
                 <h2 style="text-align: center; margin-bottom: 20px;">医疗器械中试管理平台</h2>
                 
                 <div class="tab-header">
-                    <div class="tab-item" :class="{ active: loginTab === 'client' }" @click="loginTab = 'client'">
+                    <div class="tab-item" :class="{ active: loginTab === 'client' }" @click="switchLoginTab('client')">
                         客户登录
                     </div>
-                    <div class="tab-item" :class="{ active: loginTab === 'internal' }" @click="loginTab = 'internal'">
+                    <div class="tab-item" :class="{ active: loginTab === 'internal' }" @click="switchLoginTab('internal')">
                         平台登录
                     </div>
                 </div>
@@ -294,18 +294,13 @@
                     <div class="form-group">
                         <label>用户名</label>
                         <input type="text" v-model="loginForm.username" placeholder="请输入用户名">
-                        <div style="font-size: 12px; color: #999; margin-top: 4px;">
-                            <span v-if="loginTab === 'client'">预填: customer001</span>
-                            <span v-else>预填: manager001</span>
-                        </div>
+                       
                     </div>
                     
                     <div class="form-group">
                         <label>密码</label>
                         <input type="password" v-model="loginForm.password" placeholder="请输入密码">
-                        <div style="font-size: 12px; color: #999; margin-top: 4px;">
-                            预填: 123456
-                        </div>
+                       
                     </div>
                     
                     <div v-if="loginTab === 'internal'" class="form-group">
@@ -621,7 +616,7 @@
                 <div class="card">
                     <h3>{{ processSteps[currentStepIndex].name }} 参数</h3>
                     
-                    <div v-for="param in processSteps[currentStepIndex].params" :key="param.name">
+<div v-for="param in processSteps[currentStepIndex].params" :key="param.name">
                         <label>{{ param.name }}</label>
                         <div style="display: flex; align-items: center;">
                             <input type="number" 
@@ -915,16 +910,16 @@
         // 登录相关
         let loginTab = 'client';
         let loginForm = {
-            username: 'manager001', // 预填默认值
-            password: '123456',     // 预填默认值
-            role: '项目经理'        // 预填默认值
+            username: 'customer001', // 客户登录默认用户
+            password: '123456',      // 客户登录默认密码
+            role: '客户'             // 客户登录默认角色
         };
         
         // 当前用户信息
         let currentUser = {
-            name: '张经理',
-            role: '项目经理',
-            id: 'PM001'
+            name: '客户001',
+            role: '客户',
+            id: 'CUST001'
         };
         
         // 不同角色的快捷入口配置
@@ -1206,8 +1201,7 @@
             type: '最终交付报告',
             time: '2025-11-24 16:30'
         };
-        
-        let approvalType = 'approve';
+let approvalType = 'approve';
         let approvalComment = '';
         let currentSignatureMethod = 'hand';
         let complianceConfirmed = false;
@@ -1223,7 +1217,7 @@
                     { name: '温度', value: '', placeholder: '输入温度', unit: '°C', min: 20, max: 25, warning: '' },
                     { name: '湿度', value: '', placeholder: '输入湿度', unit: '%', min: 45, max: 65, warning: '' }
                 ]
-            },
+},
             {
                 name: '组装',
                 params: [
@@ -1346,8 +1340,15 @@
             }
             
             // 模拟登录成功
-            currentUser.name = loginForm.username;
-            currentUser.role = loginTab === 'client' ? '客户' : loginForm.role;
+            if (loginTab === 'client') {
+                currentUser.name = '客户001';
+                currentUser.role = '客户';
+                currentUser.id = 'CUST001';
+            } else {
+                currentUser.name = loginForm.username;
+                currentUser.role = loginForm.role;
+                currentUser.id = loginForm.username === 'admin' ? 'ADMIN001' : 'USER001';
+            }
             
             showToast = true;
             toastMessage = '登录成功！';
@@ -1521,7 +1522,12 @@
             setTimeout(() => { 
                 showToast = false;
                 currentPage = 'login';
-                loginForm = { username: 'manager001', password: '123456', role: '项目经理' };
+                loginTab = 'client';
+                loginForm = {
+                    username: 'customer001',
+                    password: '123456',
+                    role: '客户'
+                };
                 updateUI();
             }, 2000);
         }
@@ -1600,6 +1606,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             initCanvas();
         });
+        
+        // 登录标签页切换逻辑
+        function switchLoginTab(tab) {
+            loginTab = tab;
+            if (tab === 'client') {
+                loginForm.username = 'customer001';
+                loginForm.password = '123456';
+                loginForm.role = '客户';
+            } else {
+                loginForm.username = 'admin';
+                loginForm.password = '123456';
+                loginForm.role = '平台管理员';
+            }
+            updateUI();
+        }
     </script>
 </body>
 </html>
