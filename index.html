@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>医疗器械中试管理平台</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@4/lib/index.css">
-    <script src="https://cdn.jsdelivr.net/npm/vant@4/lib/vant.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -217,6 +214,64 @@
             opacity: 0.5;
             pointer-events: none;
         }
+        .project-item {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .project-item:last-child {
+            border-bottom: none;
+        }
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .project-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .project-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: white;
+        }
+        .status-progress { background: #ff9800; }
+        .status-completed { background: #4caf50; }
+        .status-pending { background: #9e9e9e; }
+        .project-details {
+            margin-top: 12px;
+            padding-left: 16px;
+            border-left: 2px solid #e0e0e0;
+        }
+        .chat-item {
+            margin: 8px 0;
+            padding: 8px;
+            border-left: 3px solid #e0e0e0;
+        }
+        .chat-sender {
+            font-weight: bold;
+            color: #0077b6;
+        }
+        .chat-time {
+            font-size: 12px;
+            color: #999;
+        }
+        .message-input {
+            display: flex;
+            margin-top: 16px;
+        }
+        .message-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px 0 0 8px;
+        }
+        .message-input button {
+            border-radius: 0 8px 8px 0;
+            padding: 12px 16px;
+        }
     </style>
 </head>
 <body>
@@ -305,10 +360,45 @@
             </div>
         </div>
 
+        <!-- 项目列表页 -->
+        <div v-if="currentPage === 'projects'" class="page">
+            <div class="header">
+                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <div>项目列表</div>
+                <div></div>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div v-for="project in projects" :key="project.id" class="project-item" @click="toggleProject(project)">
+                    <div class="project-header">
+                        <div class="project-name">{{ project.name }}</div>
+                        <div :class="['project-status', getStatusClass(project.status)]">{{ project.status }}</div>
+                    </div>
+                    
+                    <div v-if="project.expanded" class="project-details">
+                        <div style="color: #666; margin: 8px 0;">客户: {{ project.client }}</div>
+                        <div style="color: #666; margin: 8px 0;">负责人: {{ project.manager }}</div>
+                        <div style="color: #666; margin: 8px 0;">启动时间: {{ project.startTime }}</div>
+                        <div style="color: #666; margin: 8px 0;">预计完成: {{ project.dueTime }}</div>
+                        
+                        <div style="margin-top: 16px;">
+                            <h4>最近动态</h4>
+                            <div v-for="update in project.updates" :key="update.id" style="margin: 8px 0; padding: 8px; background: #f9f9f9; border-radius: 4px;">
+                                <div style="font-size: 12px; color: #999;">{{ update.time }}</div>
+                                <div>{{ update.content }}</div>
+                            </div>
+                        </div>
+                        
+                        <button @click="openProjectDetail(project)" class="btn" style="margin-top: 16px;">查看项目详情</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 项目详情页 -->
         <div v-if="currentPage === 'project-detail'" class="page">
             <div class="header">
-                <button @click="navigateTo('home')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
+                <button @click="navigateTo('projects')" style="background: none; border: none; color: white; font-size: 16px;">←</button>
                 <div>项目详情</div>
                 <div></div>
             </div>
@@ -356,9 +446,10 @@
                 <!-- 沟通记录 -->
                 <div class="card">
                     <h3>💬 沟通记录</h3>
-                    <div v-for="msg in selectedProject.messages" :key="msg.id" style="margin: 8px 0; padding: 8px; border-left: 3px solid #e0e0e0;">
-                        <div style="font-size: 12px; color: #666;">{{ msg.sender }} - {{ msg.time }}</div>
+                    <div v-for="msg in selectedProject.messages" :key="msg.id" class="chat-item">
+                        <div class="chat-sender">{{ msg.sender }}</div>
                         <div>{{ msg.content }}</div>
+                        <div class="chat-time">{{ msg.time }}</div>
                     </div>
                 </div>
                 
@@ -711,21 +802,43 @@
             </div>
             
             <div style="padding: 16px;">
-                <div class="card">
-                    <h3>项目群聊</h3>
-                    <div v-for="msg in chatMessages" :key="msg.id" style="margin: 8px 0; padding: 8px; border-left: 3px solid #e0e0e0;">
-                        <div style="font-size: 12px; color: #666;">{{ msg.sender }} - {{ msg.time }}</div>
-                        <div>{{ msg.content }}</div>
-                    </div>
-                    
-                    <div style="display: flex; margin-top: 16px;">
-                        <input type="text" v-model="newMessage" placeholder="输入消息..." class="param-input" style="flex: 1; margin-right: 8px;">
-                        <button @click="sendMessage" class="btn" style="width: auto; padding: 12px 16px;">发送</button>
+                <div style="display: flex; overflow-x: auto; margin-bottom: 16px;">
+                    <div v-for="tab in messageTabs" :key="tab.key" 
+                         :class="['nav-item', { active: activeMessageTab === tab.key }]"
+                         @click="activeMessageTab = tab.key"
+                         style="white-space: nowrap; padding: 8px 16px;">
+                        {{ tab.label }}
                     </div>
                 </div>
                 
-                <div class="card">
-                    <h3>通知中心</h3>
+                <!-- 全部沟通 -->
+                <div v-if="activeMessageTab === 'all'">
+                    <div v-for="msg in allMessages" :key="msg.id" class="chat-item">
+                        <div style="font-size: 12px; color: #666;">{{ msg.project }}</div>
+                        <div class="chat-sender">{{ msg.sender }}</div>
+                        <div>{{ msg.content }}</div>
+                        <div class="chat-time">{{ msg.time }}</div>
+                    </div>
+                </div>
+                
+                <!-- 项目沟通 -->
+                <div v-if="activeMessageTab === 'project'">
+                    <div v-for="project in projects" :key="project.id" class="card">
+                        <div style="font-weight: bold; margin-bottom: 8px;">{{ project.name }}</div>
+                        <div v-for="msg in project.messages" :key="msg.id" class="chat-item">
+                            <div class="chat-sender">{{ msg.sender }}</div>
+                            <div>{{ msg.content }}</div>
+                            <div class="chat-time">{{ msg.time }}</div>
+                        </div>
+                        <div class="message-input">
+                            <input v-model="project.newMessage" placeholder="发送消息...">
+                            <button @click="sendProjectMessage(project)" class="btn">发送</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 通知中心 -->
+                <div v-if="activeMessageTab === 'notifications'">
                     <div v-for="notification in notifications" :key="notification.id" style="margin: 8px 0; padding: 8px; border-left: 3px solid #ff9800;">
                         <div style="font-size: 12px; color: #666;">{{ notification.time }}</div>
                         <div>{{ notification.content }}</div>
@@ -796,621 +909,697 @@
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        // 当前页面
+        let currentPage = 'login';
         
-        createApp({
-            setup() {
-                // 当前页面
-                const currentPage = ref('login');
-                
-                // 登录相关
-                const loginTab = ref('client');
-                const loginForm = ref({
-                    username: 'manager001', // 预填默认值
-                    password: '123456',     // 预填默认值
-                    role: '项目经理'        // 预填默认值
-                });
-                
-                // 当前用户信息
-                const currentUser = ref({
-                    name: '张经理',
-                    role: '项目经理',
-                    id: 'PM001'
-                });
-                
-                // 不同角色的快捷入口配置
-                const roleQuickEntries = {
-                    '客户': [
-                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
-                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
-                        { id: 3, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
-                        { id: 4, icon: '📎', text: '文件中心', page: 'files', enabled: true },
-                        { id: 5, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
-                        { id: 6, icon: '🔧', text: '参数录入', page: 'process-entry', enabled: false },
-                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
-                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
-                    ],
-                    '项目经理': [
-                        { id: 1, icon: '📄', text: '新建申请', page: 'apply', enabled: true },
-                        { id: 2, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
-                        { id: 3, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
-                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
-                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
-                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: true },
-                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
-                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
-                    ],
-                    '中试工程师': [
-                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
-                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
-                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
-                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
-                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
-                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
-                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
-                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
-                    ],
-                    '检测工程师': [
-                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
-                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
-                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
-                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
-                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
-                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
-                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
-                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
-                    ],
-                    '质量审核员': [
-                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
-                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
-                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: false },
-                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
-                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
-                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
-                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
-                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
-                    ],
-                    '平台管理员': [
-                        { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
-                        { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
-                        { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
-                        { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
-                        { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
-                        { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: true },
-                        { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
-                        { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
-                    ]
-                };
-                
-                // 根据当前角色获取对应的快捷入口
-                const quickEntries = computed(() => {
-                    return roleQuickEntries[currentUser.value.role] || roleQuickEntries['项目经理'];
-                });
-                
-                // 演示数据
-                const todoCount = ref(3);
-                const projectUpdates = ref([
+        // 登录相关
+        let loginTab = 'client';
+        let loginForm = {
+            username: 'manager001', // 预填默认值
+            password: '123456',     // 预填默认值
+            role: '项目经理'        // 预填默认值
+        };
+        
+        // 当前用户信息
+        let currentUser = {
+            name: '张经理',
+            role: '项目经理',
+            id: 'PM001'
+        };
+        
+        // 不同角色的快捷入口配置
+        const roleQuickEntries = {
+            '客户': [
+                { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                { id: 3, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                { id: 4, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                { id: 5, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                { id: 6, icon: '🔧', text: '参数录入', page: 'process-entry', enabled: false },
+                { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+            ],
+            '项目经理': [
+                { id: 1, icon: '📄', text: '新建申请', page: 'apply', enabled: true },
+                { id: 2, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                { id: 3, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: true },
+                { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+            ],
+            '中试工程师': [
+                { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
+                { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+            ],
+            '检测工程师': [
+                { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
+                { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+            ],
+            '质量审核员': [
+                { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: false },
+                { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: false },
+                { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+            ],
+            '平台管理员': [
+                { id: 1, icon: '📊', text: '我的项目', page: 'projects', enabled: true },
+                { id: 2, icon: '✅', text: '待我审批', page: 'todo', enabled: true },
+                { id: 3, icon: '📋', text: '参数录入', page: 'process-entry', enabled: true },
+                { id: 4, icon: '💬', text: '沟通中心', page: 'messages', enabled: true },
+                { id: 5, icon: '📎', text: '文件中心', page: 'files', enabled: true },
+                { id: 6, icon: '📋', text: '报告生成', page: 'report-generation', enabled: true },
+                { id: 7, icon: '✅', text: '任务中心', page: 'todo', enabled: true },
+                { id: 8, icon: '📁', text: '我的设置', page: 'settings', enabled: true }
+            ]
+        };
+        
+        // 根据当前角色获取对应的快捷入口
+        function getQuickEntries() {
+            return roleQuickEntries[currentUser.role] || roleQuickEntries['项目经理'];
+        }
+        
+        // 项目列表
+        let projects = [
+            {
+                id: '2025-MD08',
+                name: '心脏起搏器中试',
+                status: '进行中',
+                client: '李经理',
+                manager: '张工',
+                startTime: '2025-10-15',
+                dueTime: '2025-11-30',
+                expanded: false,
+                newMessage: '',
+                updates: [
+                    { id: 1, content: '工艺验证完成', time: '2025-11-24 15:30' },
+                    { id: 2, content: '试制执行阶段', time: '2025-11-10 10:20' }
+                ],
+                messages: [
+                    { id: 'msg1', sender: '王工', content: '今天完成了加速老化试验，数据正常', time: '14:22' },
+                    { id: 'msg2', sender: '系统', content: '《验证报告》已提交至审核队列', time: '10:15' },
+                    { id: 'msg3', sender: '张经理', content: '同意进入报告编制阶段', time: '16:40' }
+                ],
+                milestones: [
+                    { step: '需求确认', status: 'completed', time: '2025-10-16' },
+                    { step: '工艺设计', status: 'completed', time: '2025-10-20' },
+                    { step: '试制执行', status: 'completed', time: '2025-11-10' },
+                    { step: '检测验证', status: 'completed', time: '2025-11-20' },
+                    { step: '报告编制', status: 'in_progress', time: '进行中', progress: 70 },
+                    { step: '客户确认', status: 'pending', time: '待触发' },
+                    { step: '项目结案', status: 'pending', time: '待触发' }
+                ],
+                files: [
+                    { name: '中试工艺方案V1.2.pdf', type: '方案', size: '2.3MB', time: '2025-10-20' },
+                    { name: '电子批记录-Batch#3.xlsx', type: '记录', size: '1.1MB', time: '2025-11-15' },
+                    { name: '检测报告MD08-V3.pdf', type: '报告', size: '4.2MB', time: '2025-11-22' },
+                    { name: '中试评价报告V1.0.pdf', type: '报告', size: '5.6MB', time: '2025-11-24' }
+                ],
+                tasks: [
                     {
-                        id: 'update1',
-                        projectName: '心脏起搏器中试',
-                        status: '工艺验证完成',
-                        file: '验证报告V1.2',
-                        updateTime: '2025-11-24 15:30'
-                    },
-                    {
-                        id: 'update2',
-                        projectName: '血糖仪外壳注塑',
-                        status: '试制执行中',
-                        file: '批记录V3.1',
-                        updateTime: '2025-11-24 14:20'
-                    },
-                    {
-                        id: 'update3',
-                        projectName: '一次性导管中试',
-                        status: '需求确认完成',
-                        file: '技术协议V1.0',
-                        updateTime: '2025-11-23 16:45'
-                    }
-                ]);
-                
-                // 选中的项目
-                const selectedProject = ref({
-                    id: '2025-MD08',
-                    name: '心脏起搏器中试',
-                    status: '报告编制中',
-                    startTime: '2025-10-15',
-                    dueTime: '2025-11-30',
-                    manager: '张工',
-                    client: '李经理',
-                    milestones: [
-                        { step: '需求确认', status: 'completed', time: '2025-10-16' },
-                        { step: '工艺设计', status: 'completed', time: '2025-10-20' },
-                        { step: '试制执行', status: 'completed', time: '2025-11-10' },
-                        { step: '检测验证', status: 'completed', time: '2025-11-20' },
-                        { step: '报告编制', status: 'in_progress', time: '进行中', progress: 70 },
-                        { step: '客户确认', status: 'pending', time: '待触发' },
-                        { step: '项目结案', status: 'pending', time: '待触发' }
-                    ],
-                    files: [
-                        { name: '中试工艺方案V1.2.pdf', type: '方案', size: '2.3MB', time: '2025-10-20' },
-                        { name: '电子批记录-Batch#3.xlsx', type: '记录', size: '1.1MB', time: '2025-11-15' },
-                        { name: '检测报告MD08-V3.pdf', type: '报告', size: '4.2MB', time: '2025-11-22' },
-                        { name: '中试评价报告V1.0.pdf', type: '报告', size: '5.6MB', time: '2025-11-24' }
-                    ],
-                    messages: [
-                        { id: 'msg1', sender: '王工', content: '今天完成了加速老化试验，数据正常', time: '14:22' },
-                        { id: 'msg2', sender: '系统', content: '《验证报告》已提交至审核队列', time: '10:15' },
-                        { id: 'msg3', sender: '张经理', content: '同意进入报告编制阶段', time: '16:40' }
-                    ],
-                    tasks: [
-                        {
-                            id: 'task1',
-                            title: '审核检测原始数据',
-                            project: '2025-MD08',
-                            dueTime: '2025-11-26 20:00',
-                            actionText: '前往审核'
-                        }
-                    ]
-                });
-                
-                // 待办任务
-                const todoTasks = ref([
-                    {
-                        id: 'T20251124001',
-                        type: 'approval',
-                        title: '需客户确认《中试评价报告》',
+                        id: 'task1',
+                        title: '审核检测原始数据',
                         project: '2025-MD08',
-                        dueTime: '2025-11-26 18:00',
-                        urgent: true,
-                        attachments: ['report_v1.pdf'],
-                        actionText: '查看并确认',
-                        action: 'approval'
-                    },
+                        dueTime: '2025-11-26 20:00',
+                        actionText: '前往审核'
+                    }
+                ]
+            },
+            {
+                id: '2025-MD12',
+                name: '血糖仪外壳注塑',
+                status: '已完成',
+                client: '王经理',
+                manager: '李工',
+                startTime: '2025-09-01',
+                dueTime: '2025-10-31',
+                expanded: false,
+                newMessage: '',
+                updates: [
+                    { id: 1, content: '项目结案', time: '2025-11-20 16:45' },
+                    { id: 2, content: '客户确认报告', time: '2025-11-18 14:30' }
+                ],
+                messages: [
+                    { id: 'msg1', sender: '赵工', content: '注塑工艺参数优化完成', time: '09:15' },
+                    { id: 'msg2', sender: '刘审核', content: '质量检测报告已审核通过', time: '11:20' }
+                ],
+                milestones: [
+                    { step: '需求确认', status: 'completed', time: '2025-09-02' },
+                    { step: '工艺设计', status: 'completed', time: '2025-09-08' },
+                    { step: '试制执行', status: 'completed', time: '2025-10-05' },
+                    { step: '检测验证', status: 'completed', time: '2025-10-15' },
+                    { step: '报告编制', status: 'completed', time: '2025-10-20' },
+                    { step: '客户确认', status: 'completed', time: '2025-10-25' },
+                    { step: '项目结案', status: 'completed', time: '2025-10-31' }
+                ],
+                files: [
+                    { name: '注塑工艺方案V1.0.pdf', type: '方案', size: '1.8MB', time: '2025-09-10' },
+                    { name: '批记录-注塑批次.xlsx', type: '记录', size: '900KB', time: '2025-10-10' },
+                    { name: '检测报告MD12-V1.pdf', type: '报告', size: '3.5MB', time: '2025-10-18' }
+                ],
+                tasks: []
+            },
+            {
+                id: '2025-MD15',
+                name: '一次性导管中试',
+                status: '进行中',
+                client: '陈经理',
+                manager: '孙工',
+                startTime: '2025-11-01',
+                dueTime: '2025-12-15',
+                expanded: false,
+                newMessage: '',
+                updates: [
+                    { id: 1, content: '需求确认完成', time: '2025-11-05 10:30' },
+                    { id: 2, content: '工艺设计中', time: '2025-11-10 14:15' }
+                ],
+                messages: [
+                    { id: 'msg1', sender: '孙工', content: '材料选型确认完成', time: '15:45' },
+                    { id: 'msg2', sender: '客户', content: '希望增加生物相容性测试', time: '16:20' }
+                ],
+                milestones: [
+                    { step: '需求确认', status: 'completed', time: '2025-11-05' },
+                    { step: '工艺设计', status: 'in_progress', time: '进行中', progress: 60 },
+                    { step: '试制执行', status: 'pending', time: '待触发' },
+                    { step: '检测验证', status: 'pending', time: '待触发' },
+                    { step: '报告编制', status: 'pending', time: '待触发' },
+                    { step: '客户确认', status: 'pending', time: '待触发' },
+                    { step: '项目结案', status: 'pending', time: '待触发' }
+                ],
+                files: [
+                    { name: '技术协议V1.0.pdf', type: '协议', size: '1.2MB', time: '2025-11-03' },
+                    { name: '材料测试报告V1.pdf', type: '报告', size: '2.1MB', time: '2025-11-08' }
+                ],
+                tasks: [
                     {
-                        id: 'T20251124002',
-                        type: 'process',
-                        title: '第4批试制参数录入',
-                        project: '2025-MD12',
-                        dueTime: '2025-11-25 14:00',
-                        urgent: false,
-                        attachments: [],
-                        actionText: '开始录入',
-                        action: 'process-entry'
-                    },
-                    {
-                        id: 'T20251124003',
-                        type: 'review',
-                        title: '检测原始数据审核',
-                        project: '2025-MD08',
-                        dueTime: '2025-11-25 20:00',
-                        urgent: true,
-                        attachments: ['data.xlsx'],
-                        actionText: '前往审核',
-                        action: 'process-entry'
+                        id: 'task1',
+                        title: '完成工艺设计',
+                        project: '2025-MD15',
+                        dueTime: '2025-11-15 18:00',
+                        actionText: '继续设计'
                     }
-                ]);
-                
-                const activeTodoTab = ref('all');
-                const todoTabs = [
-                    { key: 'urgent', label: '🔴 高优先级' },
-                    { key: 'approval', label: '⏳ 待审批' },
-                    { key: 'process', label: '📋 待录入' },
-                    { key: 'all', label: '✅ 全部' }
-                ];
-                
-                const filteredTasks = computed(() => {
-                    if (activeTodoTab.value === 'all') return todoTasks.value;
-                    if (activeTodoTab.value === 'urgent') return todoTasks.value.filter(t => t.urgent);
-                    return todoTasks.value.filter(t => t.type === activeTodoTab.value);
-                });
-                
-                // 电子签批相关
-                const approvalDocument = ref({
-                    title: '中试评价报告V1.0',
-                    project: '2025-MD08',
-                    type: '最终交付报告',
-                    time: '2025-11-24 16:30'
-                });
-                
-                const approvalType = ref('approve');
-                const approvalComment = ref('');
-                const currentSignatureMethod = ref('hand');
-                const complianceConfirmed = ref(false);
-                const signatureCanvas = ref(null);
-                const isDrawing = ref(false);
-                
-                // 工艺参数录入
-                const currentLocation = ref('组装车间-工位03');
-                const processSteps = ref([
-                    {
-                        name: '预处理',
-                        params: [
-                            { name: '温度', value: '', placeholder: '输入温度', unit: '°C', min: 20, max: 25, warning: '' },
-                            { name: '湿度', value: '', placeholder: '输入湿度', unit: '%', min: 45, max: 65, warning: '' }
-                        ]
-                    },
-                    {
-                        name: '组装',
-                        params: [
-                            { name: '压力', value: '', placeholder: '输入压力', unit: 'kPa', min: 100, max: 120, warning: '' },
-                            { name: '持续时间', value: '', placeholder: '输入时间', unit: 'min', min: 10, max: 20, warning: '' }
-                        ]
-                    },
-                    {
-                        name: '老化测试',
-                        params: [
-                            { name: '温度', value: '', placeholder: '输入温度', unit: '°C', min: 40, max: 50, warning: '' },
-                            { name: '时间', value: '', placeholder: '输入时间', unit: 'h', min: 24, max: 168, warning: '' }
-                        ]
-                    }
-                ]);
-                const currentStepIndex = ref(0);
-                const paramRemark = ref('');
-                
-                // 报告生成
-                const reportDataSources = ref([
-                    { name: '工艺数据', enabled: true, status: 'complete', statusText: '完整' },
-                    { name: '检测结果', enabled: true, status: 'partial', statusText: '部分缺失' },
-                    { name: '电子签批', enabled: false, status: 'pending', statusText: '待完成' },
-                    { name: '设备日志', enabled: true, status: 'complete', statusText: '完整' }
-                ]);
-                const selectedTemplate = ref('nmpa');
-                const showVersionHistory = ref(false);
-                
-                // 系统设置
-                const departments = ref([
-                    { name: '平台管理部', users: ['张经理', '李主管'] },
-                    { name: '中试工程部', users: ['王工', '赵工', '孙工'] },
-                    { name: '质量审核组', users: ['刘审核', '陈审核'] }
-                ]);
-                const users = ref([
-                    { id: 'PM001', name: '张经理', role: '项目经理', department: '平台管理部' },
-                    { id: 'EN001', name: '王工', role: '中试工程师', department: '中试工程部' },
-                    { id: 'QA001', name: '刘审核', role: '质量审核员', department: '质量审核组' }
-                ]);
-                const processTemplates = ref([
-                    { id: 'temp1', name: '心脏起搏器中试流程', type: '有源器械', version: 'V2.1', status: '启用' },
-                    { id: 'temp2', name: '血糖仪注塑中试流程', type: '无源器械', version: 'V1.3', status: '启用' },
-                    { id: 'temp3', name: '一次性导管中试流程', type: '三类器械', version: 'V3.0', status: '草稿' }
-                ]);
-                const securitySettings = ref({
-                    mfaEnabled: true,
-                    sessionTimeout: '30'
-                });
-                
-                // 新建项目
-                const newProject = ref({
-                    name: '',
-                    type: '',
-                    duration: '',
-                    description: ''
-                });
-                
-                // 沟通中心
-                const chatMessages = ref([
-                    { id: 1, sender: '张经理', content: '大家好，今天开始心脏起搏器中试项目', time: '10:30' },
-                    { id: 2, sender: '王工', content: '收到，准备开始预处理步骤', time: '10:32' },
-                    { id: 3, sender: '系统', content: '《工艺方案》已上传至文件中心', time: '10:35' }
-                ]);
-                const newMessage = ref('');
-                const notifications = ref([
-                    { id: 1, content: '《验证报告》已生成，请审核', time: '14:20' },
-                    { id: 2, content: '新任务：参数录入 - 第4批', time: '11:15' }
-                ]);
-                
-                // 文件中心
-                const allFiles = ref([
-                    { name: '中试工艺方案V1.2.pdf', type: '方案', size: '2.3MB', time: '2025-10-20', category: '方案' },
-                    { name: '电子批记录-Batch#3.xlsx', type: '记录', size: '1.1MB', time: '2025-11-15', category: '记录' },
-                    { name: '检测报告MD08-V3.pdf', type: '报告', size: '4.2MB', time: '2025-11-22', category: '报告' },
-                    { name: '中试评价报告V1.0.pdf', type: '报告', size: '5.6MB', time: '2025-11-24', category: '报告' },
-                    { name: 'SOP-组装操作规程V1.0.pdf', type: 'SOP', size: '1.8MB', time: '2025-10-18', category: 'SOP' }
-                ]);
-                const activeFileTab = ref('all');
-                const fileTabs = [
-                    { key: 'all', label: '全部' },
-                    { key: '方案', label: '方案' },
-                    { key: '记录', label: '记录' },
-                    { key: '报告', label: '报告' },
-                    { key: 'SOP', label: 'SOP' }
-                ];
-                
-                const filteredFiles = computed(() => {
-                    if (activeFileTab.value === 'all') return allFiles.value;
-                    return allFiles.value.filter(file => file.category === activeFileTab.value);
-                });
-                
-                // Toast 提示
-                const showToast = ref(false);
-                const toastMessage = ref('');
-                
-                // 方法
-                const login = () => {
-                    if (!loginForm.value.username || !loginForm.value.password) {
-                        showToast.value = true;
-                        toastMessage.value = '请输入用户名和密码';
-                        setTimeout(() => { showToast.value = false; }, 2000);
-                        return;
-                    }
-                    
-                    if (loginTab.value === 'internal' && !loginForm.value.role) {
-                        showToast.value = true;
-                        toastMessage.value = '请选择角色';
-                        setTimeout(() => { showToast.value = false; }, 2000);
-                        return;
-                    }
-                    
-                    // 模拟登录成功
-                    currentUser.value.name = loginForm.value.username;
-                    currentUser.value.role = loginTab.value === 'client' ? '客户' : loginForm.value.role;
-                    
-                    showToast.value = true;
-                    toastMessage.value = '登录成功！';
-                    setTimeout(() => { 
-                        showToast.value = false;
-                        currentPage.value = 'home';
-                    }, 2000);
-                };
-                
-                const navigateTo = (page) => {
-                    // 检查角色权限
-                    if (page === 'process-entry' && ['客户', '质量审核员'].includes(currentUser.value.role)) {
-                        showNoPermission();
-                        return;
-                    }
-                    if (page === 'report-generation' && ['客户', '中试工程师', '检测工程师', '质量审核员'].includes(currentUser.value.role)) {
-                        showNoPermission();
-                        return;
-                    }
-                    
-                    currentPage.value = page;
-                    showToast.value = false;
-                };
-                
-                const showNoPermission = () => {
-                    showToast.value = true;
-                    toastMessage.value = '您没有权限访问此功能';
-                    setTimeout(() => { showToast.value = false; }, 2000);
-                };
-                
-                const getStatusClass = (status) => {
-                    return `status-${status}`;
-                };
-                
-                const handleTask = (task) => {
-                    if (task.action) {
-                        navigateTo(task.action);
-                    } else {
-                        showToast.value = true;
-                        toastMessage.value = '功能开发中...';
-                        setTimeout(() => { showToast.value = false; }, 2000);
-                    }
-                };
-                
-                const previewFile = (file) => {
-                    showToast.value = true;
-                    toastMessage.value = `预览文件: ${file.name}`;
-                    setTimeout(() => { showToast.value = false; }, 2000);
-                };
-                
-                const startDrawing = (e) => {
-                    isDrawing.value = true;
-                    const canvas = signatureCanvas.value;
-                    const ctx = canvas.getContext('2d');
-                    ctx.beginPath();
-                    const rect = canvas.getBoundingClientRect();
-                    ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-                };
-                
-                const draw = (e) => {
-                    if (!isDrawing.value) return;
-                    const canvas = signatureCanvas.value;
-                    const ctx = canvas.getContext('2d');
-                    const rect = canvas.getBoundingClientRect();
-                    ctx.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-                    ctx.stroke();
-                };
-                
-                const stopDrawing = () => {
-                    isDrawing.value = false;
-                };
-                
-                const simulateBioAuth = () => {
-                    showToast.value = true;
-                    toastMessage.value = '生物识别验证成功！';
-                    setTimeout(() => { 
-                        showToast.value = false;
-                        currentSignatureMethod.value = 'bio';
-                    }, 2000);
-                };
-                
-                const submitApproval = () => {
-                    if (!complianceConfirmed.value) {
-                        showToast.value = true;
-                        toastMessage.value = '请确认法律责任条款';
-                        setTimeout(() => { showToast.value = false; }, 2000);
-                        return;
-                    }
-                    
-                    showToast.value = true;
-                    toastMessage.value = '签批提交成功！';
-                    setTimeout(() => { 
-                        showToast.value = false;
-                        navigateTo('approval-success');
-                    }, 2000);
-                };
-                
-                const validateParam = (param) => {
-                    const value = parseFloat(param.value);
-                    if (value < param.min || value > param.max) {
-                        param.warning = `超出范围 (${param.min}-${param.max}${param.unit})`;
-                    } else {
-                        param.warning = '';
-                    }
-                };
-                
-                const submitProcessData = () => {
-                    // 验证所有参数
-                    let hasError = false;
-                    processSteps.value[currentStepIndex.value].params.forEach(param => {
-                        if (param.warning) hasError = true;
-                    });
-                    
-                    if (hasError) {
-                        showToast.value = true;
-                        toastMessage.value = '存在参数异常，请检查后提交';
-                        setTimeout(() => { showToast.value = false; }, 2000);
-                        return;
-                    }
-                    
-                    showToast.value = true;
-                    toastMessage.value = '参数提交成功！';
-                    setTimeout(() => { 
-                        showToast.value = false;
-                        navigateTo('home');
-                    }, 2000);
-                };
-                
-                const saveDraft = () => {
-                    showToast.value = true;
-                    toastMessage.value = '草稿已保存到本地';
-                    setTimeout(() => { showToast.value = false; }, 2000);
-                };
-                
-                const generateReport = () => {
-                    showToast.value = true;
-                    toastMessage.value = '报告生成中...';
-                    setTimeout(() => { 
-                        showToast.value = false;
-                        navigateTo('home');
-                    }, 2000);
-                };
-                
-                const editUser = (user) => {
-                    showToast.value = true;
-                    toastMessage.value = `编辑用户: ${user.name}`;
-                    setTimeout(() => { showToast.value = false; }, 2000);
-                };
-                
-                const logout = () => {
-                    showToast.value = true;
-                    toastMessage.value = '退出登录成功';
-                    setTimeout(() => { 
-                        showToast.value = false;
-                        currentPage.value = 'login';
-                        loginForm.value = { username: 'manager001', password: '123456', role: '项目经理' };
-                    }, 2000);
-                };
-                
-                const submitNewProject = () => {
-                    if (!newProject.value.name || !newProject.value.type) {
-                        showToast.value = true;
-                        toastMessage.value = '请填写项目名称和类型';
-                        setTimeout(() => { showToast.value = false; }, 2000);
-                        return;
-                    }
-                    
-                    showToast.value = true;
-                    toastMessage.value = '申请提交成功！';
-                    setTimeout(() => { 
-                        showToast.value = false;
-                        navigateTo('home');
-                    }, 2000);
-                };
-                
-                const sendMessage = () => {
-                    if (!newMessage.value.trim()) {
-                        showToast.value = true;
-                        toastMessage.value = '请输入消息内容';
-                        setTimeout(() => { showToast.value = false; }, 2000);
-                        return;
-                    }
-                    
-                    chatMessages.value.push({
-                        id: chatMessages.value.length + 1,
-                        sender: currentUser.value.name,
-                        content: newMessage.value,
-                        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-                    });
-                    newMessage.value = '';
-                };
-                
-                // 初始化画布
-                onMounted(() => {
-                    if (signatureCanvas.value) {
-                        const canvas = signatureCanvas.value;
-                        const ctx = canvas.getContext('2d');
-                        ctx.lineWidth = 2;
-                        ctx.lineCap = 'round';
-                        ctx.strokeStyle = '#000';
-                    }
-                });
-                
-                return {
-                    currentPage,
-                    loginTab,
-                    loginForm,
-                    currentUser,
-                    quickEntries,
-                    todoCount,
-                    projectUpdates,
-                    selectedProject,
-                    todoTasks,
-                    activeTodoTab,
-                    todoTabs,
-                    filteredTasks,
-                    approvalDocument,
-                    approvalType,
-                    approvalComment,
-                    currentSignatureMethod,
-                    complianceConfirmed,
-                    signatureCanvas,
-                    processSteps,
-                    currentStepIndex,
-                    paramRemark,
-                    currentLocation,
-                    reportDataSources,
-                    selectedTemplate,
-                    showVersionHistory,
-                    departments,
-                    users,
-                    processTemplates,
-                    securitySettings,
-                    newProject,
-                    chatMessages,
-                    newMessage,
-                    notifications,
-                    allFiles,
-                    activeFileTab,
-                    fileTabs,
-                    filteredFiles,
-                    showToast,
-                    toastMessage,
-                    login,
-                    navigateTo,
-                    showNoPermission,
-                    getStatusClass,
-                    handleTask,
-                    previewFile,
-                    startDrawing,
-                    draw,
-                    stopDrawing,
-                    simulateBioAuth,
-                    submitApproval,
-                    validateParam,
-                    submitProcessData,
-                    saveDraft,
-                    generateReport,
-                    editUser,
-                    logout,
-                    submitNewProject,
-                    sendMessage
-                };
+                ]
             }
-        }).mount('#app');
+        ];
+        
+        // 选中的项目
+        let selectedProject = projects[0];
+        
+        // 演示数据
+        let todoCount = 3;
+        let projectUpdates = [
+            {
+                id: 'update1',
+                projectName: '心脏起搏器中试',
+                status: '工艺验证完成',
+                file: '验证报告V1.2',
+                updateTime: '2025-11-24 15:30'
+            },
+            {
+                id: 'update2',
+                projectName: '血糖仪外壳注塑',
+                status: '试制执行中',
+                file: '批记录V3.1',
+                updateTime: '2025-11-24 14:20'
+            },
+            {
+                id: 'update3',
+                projectName: '一次性导管中试',
+                status: '需求确认完成',
+                file: '技术协议V1.0',
+                updateTime: '2025-11-23 16:45'
+            }
+        ];
+        
+        // 待办任务
+        let todoTasks = [
+            {
+                id: 'T20251124001',
+                type: 'approval',
+                title: '需客户确认《中试评价报告》',
+                project: '2025-MD08',
+                dueTime: '2025-11-26 18:00',
+                urgent: true,
+                attachments: ['report_v1.pdf'],
+                actionText: '查看并确认',
+                action: 'approval'
+            },
+            {
+                id: 'T20251124002',
+                type: 'process',
+                title: '第4批试制参数录入',
+                project: '2025-MD12',
+                dueTime: '2025-11-25 14:00',
+                urgent: false,
+                attachments: [],
+                actionText: '开始录入',
+                action: 'process-entry'
+            },
+            {
+                id: 'T20251124003',
+                type: 'review',
+                title: '检测原始数据审核',
+                project: '2025-MD08',
+                dueTime: '2025-11-25 20:00',
+                urgent: true,
+                attachments: ['data.xlsx'],
+                actionText: '前往审核',
+                action: 'process-entry'
+            }
+        ];
+        
+        let activeTodoTab = 'all';
+        let todoTabs = [
+            { key: 'urgent', label: '🔴 高优先级' },
+            { key: 'approval', label: '⏳ 待审批' },
+            { key: 'process', label: '📋 待录入' },
+            { key: 'all', label: '✅ 全部' }
+        ];
+        
+        function getFilteredTasks() {
+            if (activeTodoTab === 'all') return todoTasks;
+            if (activeTodoTab === 'urgent') return todoTasks.filter(t => t.urgent);
+            return todoTasks.filter(t => t.type === activeTodoTab);
+        }
+        
+        // 电子签批相关
+        let approvalDocument = {
+            title: '中试评价报告V1.0',
+            project: '2025-MD08',
+            type: '最终交付报告',
+            time: '2025-11-24 16:30'
+        };
+        
+        let approvalType = 'approve';
+        let approvalComment = '';
+        let currentSignatureMethod = 'hand';
+        let complianceConfirmed = false;
+        let signatureCanvas = null;
+        let isDrawing = false;
+        
+        // 工艺参数录入
+        let currentLocation = '组装车间-工位03';
+        let processSteps = [
+            {
+                name: '预处理',
+                params: [
+                    { name: '温度', value: '', placeholder: '输入温度', unit: '°C', min: 20, max: 25, warning: '' },
+                    { name: '湿度', value: '', placeholder: '输入湿度', unit: '%', min: 45, max: 65, warning: '' }
+                ]
+            },
+            {
+                name: '组装',
+                params: [
+                    { name: '压力', value: '', placeholder: '输入压力', unit: 'kPa', min: 100, max: 120, warning: '' },
+                    { name: '持续时间', value: '', placeholder: '输入时间', unit: 'min', min: 10, max: 20, warning: '' }
+                ]
+            },
+            {
+                name: '老化测试',
+                params: [
+                    { name: '温度', value: '', placeholder: '输入温度', unit: '°C', min: 40, max: 50, warning: '' },
+                    { name: '时间', value: '', placeholder: '输入时间', unit: 'h', min: 24, max: 168, warning: '' }
+                ]
+            }
+        ];
+        let currentStepIndex = 0;
+        let paramRemark = '';
+        
+        // 报告生成
+        let reportDataSources = [
+            { name: '工艺数据', enabled: true, status: 'complete', statusText: '完整' },
+            { name: '检测结果', enabled: true, status: 'partial', statusText: '部分缺失' },
+            { name: '电子签批', enabled: false, status: 'pending', statusText: '待完成' },
+            { name: '设备日志', enabled: true, status: 'complete', statusText: '完整' }
+        ];
+        let selectedTemplate = 'nmpa';
+        let showVersionHistory = false;
+        
+        // 系统设置
+        let departments = [
+            { name: '平台管理部', users: ['张经理', '李主管'] },
+            { name: '中试工程部', users: ['王工', '赵工', '孙工'] },
+            { name: '质量审核组', users: ['刘审核', '陈审核'] }
+        ];
+        let users = [
+            { id: 'PM001', name: '张经理', role: '项目经理', department: '平台管理部' },
+            { id: 'EN001', name: '王工', role: '中试工程师', department: '中试工程部' },
+            { id: 'QA001', name: '刘审核', role: '质量审核员', department: '质量审核组' }
+        ];
+        let processTemplates = [
+            { id: 'temp1', name: '心脏起搏器中试流程', type: '有源器械', version: 'V2.1', status: '启用' },
+            { id: 'temp2', name: '血糖仪注塑中试流程', type: '无源器械', version: 'V1.3', status: '启用' },
+            { id: 'temp3', name: '一次性导管中试流程', type: '三类器械', version: 'V3.0', status: '草稿' }
+        ];
+        let securitySettings = {
+            mfaEnabled: true,
+            sessionTimeout: '30'
+        };
+        
+        // 新建项目
+        let newProject = {
+            name: '',
+            type: '',
+            duration: '',
+            description: ''
+        };
+        
+        // 沟通中心
+        let messageTabs = [
+            { key: 'all', label: '全部沟通' },
+            { key: 'project', label: '项目沟通' },
+            { key: 'notifications', label: '通知中心' }
+        ];
+        let activeMessageTab = 'all';
+        let allMessages = [
+            { id: 1, project: '心脏起搏器中试', sender: '张经理', content: '大家好，今天开始心脏起搏器中试项目', time: '10:30' },
+            { id: 2, project: '血糖仪外壳注塑', sender: '赵工', content: '注塑工艺参数优化完成', time: '09:15' },
+            { id: 3, project: '一次性导管中试', sender: '孙工', content: '材料选型确认完成', time: '15:45' },
+            { id: 4, project: '心脏起搏器中试', sender: '王工', content: '今天完成了加速老化试验，数据正常', time: '14:22' }
+        ];
+        let notifications = [
+            { id: 1, content: '《验证报告》已生成，请审核', time: '14:20' },
+            { id: 2, content: '新任务：参数录入 - 第4批', time: '11:15' }
+        ];
+        
+        // 文件中心
+        let allFiles = [
+            { name: '中试工艺方案V1.2.pdf', type: '方案', size: '2.3MB', time: '2025-10-20', category: '方案', project: '2025-MD08' },
+            { name: '电子批记录-Batch#3.xlsx', type: '记录', size: '1.1MB', time: '2025-11-15', category: '记录', project: '2025-MD08' },
+            { name: '检测报告MD08-V3.pdf', type: '报告', size: '4.2MB', time: '2025-11-22', category: '报告', project: '2025-MD08' },
+            { name: '中试评价报告V1.0.pdf', type: '报告', size: '5.6MB', time: '2025-11-24', category: '报告', project: '2025-MD08' },
+            { name: '注塑工艺方案V1.0.pdf', type: '方案', size: '1.8MB', time: '2025-09-10', category: '方案', project: '2025-MD12' },
+            { name: '批记录-注塑批次.xlsx', type: '记录', size: '900KB', time: '2025-10-10', category: '记录', project: '2025-MD12' },
+            { name: '检测报告MD12-V1.pdf', type: '报告', size: '3.5MB', time: '2025-10-18', category: '报告', project: '2025-MD12' },
+            { name: '技术协议V1.0.pdf', type: '协议', size: '1.2MB', time: '2025-11-03', category: '协议', project: '2025-MD15' },
+            { name: '材料测试报告V1.pdf', type: '报告', size: '2.1MB', time: '2025-11-08', category: '报告', project: '2025-MD15' }
+        ];
+        let activeFileTab = 'all';
+        let fileTabs = [
+            { key: 'all', label: '全部' },
+            { key: '方案', label: '方案' },
+            { key: '记录', label: '记录' },
+            { key: '报告', label: '报告' },
+            { key: 'SOP', label: 'SOP' }
+        ];
+        
+        function getFilteredFiles() {
+            if (activeFileTab === 'all') return allFiles;
+            return allFiles.filter(file => file.category === activeFileTab);
+        }
+        
+        // Toast 提示
+        let showToast = false;
+        let toastMessage = '';
+        
+        // 方法
+        function login() {
+            if (!loginForm.username || !loginForm.password) {
+                showToast = true;
+                toastMessage = '请输入用户名和密码';
+                setTimeout(() => { showToast = false; }, 2000);
+                return;
+            }
+            
+            if (loginTab === 'internal' && !loginForm.role) {
+                showToast = true;
+                toastMessage = '请选择角色';
+                setTimeout(() => { showToast = false; }, 2000);
+                return;
+            }
+            
+            // 模拟登录成功
+            currentUser.name = loginForm.username;
+            currentUser.role = loginTab === 'client' ? '客户' : loginForm.role;
+            
+            showToast = true;
+            toastMessage = '登录成功！';
+            setTimeout(() => { 
+                showToast = false;
+                currentPage = 'home';
+                updateUI();
+            }, 2000);
+        }
+        
+        function navigateTo(page) {
+            // 检查角色权限
+            if (page === 'process-entry' && ['客户', '质量审核员'].includes(currentUser.role)) {
+                showNoPermission();
+                return;
+            }
+            if (page === 'report-generation' && ['客户', '中试工程师', '检测工程师', '质量审核员'].includes(currentUser.role)) {
+                showNoPermission();
+                return;
+            }
+            
+            currentPage = page;
+            showToast = false;
+            updateUI();
+        }
+        
+        function showNoPermission() {
+            showToast = true;
+            toastMessage = '您没有权限访问此功能';
+            setTimeout(() => { showToast = false; }, 2000);
+        }
+        
+        function getStatusClass(status) {
+            if (status === '进行中' || status === 'in_progress') return 'status-progress';
+            if (status === '已完成' || status === 'completed') return 'status-completed';
+            return 'status-pending';
+        }
+        
+        function toggleProject(project) {
+            project.expanded = !project.expanded;
+            updateUI();
+        }
+        
+        function openProjectDetail(project) {
+            selectedProject = project;
+            currentPage = 'project-detail';
+            updateUI();
+        }
+        
+        function handleTask(task) {
+            if (task.action) {
+                navigateTo(task.action);
+            } else {
+                showToast = true;
+                toastMessage = '功能开发中...';
+                setTimeout(() => { showToast = false; }, 2000);
+            }
+        }
+        
+        function previewFile(file) {
+            showToast = true;
+            toastMessage = `预览文件: ${file.name}`;
+            setTimeout(() => { showToast = false; }, 2000);
+        }
+        
+        function startDrawing(e) {
+            isDrawing = true;
+            const canvas = document.querySelector('.signature-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.beginPath();
+            const rect = canvas.getBoundingClientRect();
+            ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            const canvas = document.querySelector('.signature-canvas');
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+            ctx.stroke();
+        }
+        
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        function simulateBioAuth() {
+            showToast = true;
+            toastMessage = '生物识别验证成功！';
+            setTimeout(() => { 
+                showToast = false;
+                currentSignatureMethod = 'bio';
+            }, 2000);
+        }
+        
+        function submitApproval() {
+            if (!complianceConfirmed) {
+                showToast = true;
+                toastMessage = '请确认法律责任条款';
+                setTimeout(() => { showToast = false; }, 2000);
+                return;
+            }
+            
+            showToast = true;
+            toastMessage = '签批提交成功！';
+            setTimeout(() => { 
+                showToast = false;
+                currentPage = 'approval-success';
+                updateUI();
+            }, 2000);
+        }
+        
+        function validateParam(param) {
+            const value = parseFloat(param.value);
+            if (value < param.min || value > param.max) {
+                param.warning = `超出范围 (${param.min}-${param.max}${param.unit})`;
+            } else {
+                param.warning = '';
+            }
+        }
+        
+        function submitProcessData() {
+            // 验证所有参数
+            let hasError = false;
+            processSteps[currentStepIndex].params.forEach(param => {
+                if (param.warning) hasError = true;
+            });
+            
+            if (hasError) {
+                showToast = true;
+                toastMessage = '存在参数异常，请检查后提交';
+                setTimeout(() => { showToast = false; }, 2000);
+                return;
+            }
+            
+            showToast = true;
+            toastMessage = '参数提交成功！';
+            setTimeout(() => { 
+                showToast = false;
+                currentPage = 'home';
+                updateUI();
+            }, 2000);
+        }
+        
+        function saveDraft() {
+            showToast = true;
+            toastMessage = '草稿已保存到本地';
+            setTimeout(() => { showToast = false; }, 2000);
+        }
+        
+        function generateReport() {
+            showToast = true;
+            toastMessage = '报告生成中...';
+            setTimeout(() => { 
+                showToast = false;
+                currentPage = 'home';
+                updateUI();
+            }, 2000);
+        }
+        
+        function editUser(user) {
+            showToast = true;
+            toastMessage = `编辑用户: ${user.name}`;
+            setTimeout(() => { showToast = false; }, 2000);
+        }
+        
+        function logout() {
+            showToast = true;
+            toastMessage = '退出登录成功';
+            setTimeout(() => { 
+                showToast = false;
+                currentPage = 'login';
+                loginForm = { username: 'manager001', password: '123456', role: '项目经理' };
+                updateUI();
+            }, 2000);
+        }
+        
+        function submitNewProject() {
+            if (!newProject.name || !newProject.type) {
+                showToast = true;
+                toastMessage = '请填写项目名称和类型';
+                setTimeout(() => { showToast = false; }, 2000);
+                return;
+            }
+            
+            showToast = true;
+            toastMessage = '申请提交成功！';
+            setTimeout(() => { 
+                showToast = false;
+                currentPage = 'home';
+                updateUI();
+            }, 2000);
+        }
+        
+        function sendProjectMessage(project) {
+            if (!project.newMessage.trim()) {
+                showToast = true;
+                toastMessage = '请输入消息内容';
+                setTimeout(() => { showToast = false; }, 2000);
+                return;
+            }
+            
+            project.messages.push({
+                id: project.messages.length + 1,
+                sender: currentUser.name,
+                content: project.newMessage,
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+            });
+            
+            // 同时添加到全局消息列表
+            allMessages.unshift({
+                id: allMessages.length + 1,
+                project: project.name,
+                sender: currentUser.name,
+                content: project.newMessage,
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+            });
+            
+            project.newMessage = '';
+            showToast = true;
+            toastMessage = '消息发送成功！';
+            setTimeout(() => { showToast = false; }, 2000);
+        }
+        
+        // 更新UI函数
+        function updateUI() {
+            const app = document.getElementById('app');
+            app.innerHTML = app.innerHTML; // 重新渲染页面
+        }
+        
+        // 初始化画布
+        function initCanvas() {
+            const canvas = document.querySelector('.signature-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#000';
+            }
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', function() {
+            updateUI();
+            initCanvas();
+        });
+        
+        // 绑定事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            initCanvas();
+        });
     </script>
 </body>
 </html>
-
-
-
