@@ -743,7 +743,7 @@
                             <input type="checkbox" v-model="securitySettings.mfaEnabled">
                             <span style="margin-left: 8px;">启用多因素认证</span>
                         </label>
-                    </div>
+</div>
                     <div style="margin: 8px 0;">
                         <label>会话超时</label>
                         <select v-model="securitySettings.sessionTimeout" class="param-input">
@@ -914,7 +914,8 @@
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
         
-        createApp({
+        // 修复Vue应用创建
+        const app = createApp({
             setup() {
                 // 当前页面
                 const currentPage = ref('login');
@@ -922,16 +923,16 @@
                 // 登录相关
                 const loginTab = ref('client');
                 const loginForm = ref({
-                    username: 'manager001', // 预填默认值
+                    username: 'customer001', // 修改为customer001
                     password: '123456',     // 预填默认值
-                    role: '项目经理'        // 预填默认值
+                    role: '客户'            // 修改为客户角色
                 });
                 
                 // 当前用户信息
                 const currentUser = ref({
-                    name: '张经理',
-                    role: '项目经理',
-                    id: 'PM001'
+                    name: '李客户',
+                    role: '客户',
+                    id: 'CUST001'
                 });
                 
                 // 不同角色的快捷入口配置
@@ -1000,7 +1001,7 @@
                 
                 // 根据当前角色获取对应的快捷入口
                 const quickEntries = computed(() => {
-                    return roleQuickEntries[currentUser.value.role] || roleQuickEntries['项目经理'];
+                    return roleQuickEntries[currentUser.value.role] || roleQuickEntries['客户'];
                 });
                 
                 // 项目列表
